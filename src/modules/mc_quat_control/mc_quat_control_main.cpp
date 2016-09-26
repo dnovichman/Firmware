@@ -1050,12 +1050,12 @@ MulticopterQuaternionControl::task_main()
 				control_attitude_rates(dt);
 
 				/* publish actuator controls */
-				_actuators.control[0] = (isfinite(_att_control(0))) ? _att_control(0) : 0.0f;
-				_actuators.control[1] = (isfinite(_att_control(1))) ? _att_control(1) : 0.0f;
-				_actuators.control[2] = (isfinite(_att_control(2))) ? _att_control(2) : 0.0f;
-				_actuators.control[3] = (isfinite(_thrust_sp)) ? _thrust_sp : 0.0f;
+				_actuators.control[0] = 0.3; //(isfinite(_att_control(0))) ? _att_control(0) : 0.0f;
+				_actuators.control[1] = 0.3; //(isfinite(_att_control(1))) ? _att_control(1) : 0.0f;
+				_actuators.control[2] = 0.3; //(isfinite(_att_control(2))) ? _att_control(2) : 0.0f;
+				_actuators.control[3] = 0.3; //(isfinite(_thrust_sp)) ? _thrust_sp : 0.0f;
 				_actuators.timestamp = hrt_absolute_time();
-
+	printf("act %3.3f %3.3f %3.3f %3.3f\n",double(_actuators.control[0]), double(_actuators.control[1]), double(_actuators.control[2]), double(_actuators.control[3]));
 				if (!_actuators_0_circuit_breaker_enabled) {
 					if (_actuators_0_pub != nullptr) {
 						orb_publish(ORB_ID(actuator_controls_0), _actuators_0_pub, &_actuators);

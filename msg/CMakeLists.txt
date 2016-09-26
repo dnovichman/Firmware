@@ -122,6 +122,13 @@ set(msg_file_names
 	vehicle_velocity_est_inertial.msg
 	vehicle_velocity_meas_est_body.msg
 	vehicle_omega_ff_setpoint.msg
+	cascaded_command.msg
+	cascaded_command_gains.msg
+	mocap_motor_state.msg
+	mocap_position_command.msg
+	mocap_position_command_gains.msg
+	mocap_rpm_command.msg
+	blinkm_control.msg
 	)
 
 # Get absolute paths

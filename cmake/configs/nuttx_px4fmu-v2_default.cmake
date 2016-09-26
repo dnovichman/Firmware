@@ -120,6 +120,10 @@ set(config_module_list
 	modules/mc_quat_pos_control
 	modules/mc_quat_vel_control
 
+	# CMU stuff
+	modules/mocap_control
+	modules/mocap_status_monitor
+
 	#
 	# Logging
 	#
