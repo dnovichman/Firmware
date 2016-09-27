@@ -92,7 +92,6 @@ void av_estimator_b::update(Vector3f &a, Vector3f &w, Vector3f &vbar, Vector3f &
 
 	if (filter_a_valid) {
 		vhat_dot_vc	= k1vc * (vhat_prev - Rhat_prev.transpose() * (vhat_in - what_in));
-		//printf("filrer a valid\n");
 	}
 
 	else

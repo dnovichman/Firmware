@@ -961,7 +961,7 @@ MulticopterAttitudeControl::task_main()
 				_actuators.control[3] = (PX4_ISFINITE(_thrust_sp)) ? _thrust_sp : 0.0f;
 				_actuators.timestamp = hrt_absolute_time();
 				_actuators.timestamp_sample = _ctrl_state.timestamp;
-printf("act %3.3f %3.3f %3.3f %3.3f\n",double(_actuators.control[0]), double(_actuators.control[1]), double(_actuators.control[2]), double(_actuators.control[3]));
+
 				_controller_status.roll_rate_integ = _rates_int(0);
 				_controller_status.pitch_rate_integ = _rates_int(1);
 				_controller_status.yaw_rate_integ = _rates_int(2);

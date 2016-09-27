@@ -112,7 +112,7 @@ int mavlink_fd;
 orb_advert_t vel_meas_pub = nullptr;
 orb_advert_t wind_vel_pub = nullptr;      //This is nolonger required
 float zbar = 0.0f, vzbar = 0.0f, beta_az = 0.0f;
-uint64_t baro_prev_time;
+uint64_t baro_prev_time = 0, baro_cur_time;
 
 int 		_v_rc_sub; 
 struct 		rc_channels_s	_v_rc_channels;
@@ -466,11 +466,13 @@ int av_estimator_thread_main(int argc, char *argv[])
 					vbar(0) = (raw.accelerometer_m_s2[0] + attitude_params.cbar_x_offset)/raw.accelerometer_m_s2[2] /Cbar(0); //0.2569f
 					vbar(1) = (raw.accelerometer_m_s2[1] + attitude_params.cbar_y_offset)/raw.accelerometer_m_s2[2] /Cbar(1); //0.4886
 
-					
+					baro_cur_time = raw.baro_timestamp_relative + raw.timestamp;
 					baro_alt = raw.baro_alt_meter - baro_offset;
-					if (baro_prev_time != raw.baro_timestamp_relative)
+
+
+					if (baro_prev_time != baro_cur_time)
 					{
-						use_barometer(attitude_params, raw.baro_timestamp_relative, baro_alt, filter_b.att.R, a, baro_data); //FIXME: do we need to consider bias?
+						use_barometer(attitude_params, baro_cur_time, baro_alt, filter_b.att.R, a, baro_data); //FIXME: do we need to consider bias?
 					}
 					
 					if (vbar(0) > 2.0f) //FIXME this is a hack changed later
@@ -661,7 +663,7 @@ void getCurrentCalibParam(av_estimator_params  attitude_params, float * current_
 }
 
 void use_barometer(av_estimator_params  attitude_params, uint64_t cur_baro_time, float baro_alt, float * cur_att, Vector3f &acc, Vector2f &baro_out)
-{
+{ 
 	Vector3f e3 = {0.0, 0.0f, 1.0f};
 	Matrix3f Rot;
 
@@ -672,9 +674,9 @@ void use_barometer(av_estimator_params  attitude_params, uint64_t cur_baro_time,
 
 	baro_alt = -baro_alt;
 
-	baro_dt = (cur_baro_time - baro_prev_time) * 0.000001f;
+	baro_dt = (cur_baro_time - baro_prev_time) * 0.000001f;	
 
-	baro_prev_time = cur_baro_time;
+
 
 	Rot(0,0) = cur_att[0]; 
 	Rot(0,1) = cur_att[1]; 
@@ -700,6 +702,8 @@ void use_barometer(av_estimator_params  attitude_params, uint64_t cur_baro_time,
 
 	baro_out(0) = z_bar_dot;
 	baro_out(1) = zbar;
+
+	baro_prev_time = cur_baro_time;
 }
 
 void 	velocity_offset_calibration(Vector3f veh_vel, Vector3f acc)
