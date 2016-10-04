@@ -93,7 +93,7 @@ static const int ERROR = -1;
 #define SF02F_MAX_DISTANCE		40.0f
 
 // designated SERIAL4/5 on Pixhawk
-#define SF0X_DEFAULT_PORT		"/dev/ttyS6"
+#define SF0X_DEFAULT_PORT		"/dev/ttyS3"
 
 class SF0X : public device::CDev
 {
@@ -604,6 +604,7 @@ SF0X::collect()
 	report.covariance = 0.0f;
 	/* TODO: set proper ID */
 	report.id = 0;
+printf("dist %3.3f\n",double(report.current_distance));
 
 	/* publish it */
 	orb_publish(ORB_ID(distance_sensor), _distance_sensor_topic, &report);
