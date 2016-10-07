@@ -93,7 +93,7 @@ static const int ERROR = -1;
 #define SF02F_MAX_DISTANCE		40.0f
 
 // designated SERIAL4/5 on Pixhawk
-#define SF0X_DEFAULT_PORT		"/dev/ttyS3"
+#define SF0X_DEFAULT_PORT		"/dev/ttyS2"
 
 class SF0X : public device::CDev
 {
