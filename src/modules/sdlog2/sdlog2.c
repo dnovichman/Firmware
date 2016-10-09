@@ -2016,8 +2016,8 @@ int sdlog2_thread_main(int argc, char *argv[])
 			if (copy_if_updated(ORB_ID(vehicle_velocity_meas_est_body), &subs.veh_vel_body_sub, &buf.veh_vel_body)) {
 				log_msg.msg_type = LOG_VMEB_MSG;
 				log_msg.body.log_VMEB.mvx = buf.veh_vel_body.meas_vx;	
-				log_msg.body.log_VMEB.mvy = buf.veh_vel_body.meas_vx;
-				log_msg.body.log_VMEB.mvz = buf.veh_vel_body.meas_vx;	
+				log_msg.body.log_VMEB.mvy = buf.veh_vel_body.meas_vy;
+				log_msg.body.log_VMEB.mvz = buf.veh_vel_body.meas_vz;	
 				log_msg.body.log_VMEB.evx = buf.veh_vel_body.est_vx;	
 				log_msg.body.log_VMEB.evy = buf.veh_vel_body.est_vy;
 				log_msg.body.log_VMEB.evz = buf.veh_vel_body.est_vz;
