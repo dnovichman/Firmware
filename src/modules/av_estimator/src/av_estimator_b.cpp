@@ -111,7 +111,7 @@ void av_estimator_b::update(Vector3f &a, Vector3f &w, Vector3f &vbar, Vector3f &
 	/* Offsets */
 	beta_a_dot = k1 * k7 * verror; 
 	beta_a = beta_a_dot * dt + beta_a_prev;
-	beta_w_dot = k3 * k8 * (g/u * Rhat * verror).cross(e3);
+	beta_w_dot = k3 * k8 * (g/u * Rhat_prev * verror).cross(e3);
 	beta_w = beta_w_dot * dt + beta_w_prev;
 
 	/* Orthonormalize matrices using gram schmidt, this is because of the euler integration */

@@ -459,13 +459,30 @@ int av_estimator_thread_main(int argc, char *argv[])
 
 					/* Calculate data time difference in seconds */
 					dt = (raw.timestamp - prev_timestamp) / 1000000.0f;
-					prev_timestamp = raw.timestamp;						
+					prev_timestamp = raw.timestamp;	
+
+										/* Remove bias from gyro measurement */
+					omega(0) = raw.gyro_rad[0] - gyro_offsets[0];
+					omega(1) = raw.gyro_rad[1] - gyro_offsets[1];
+					omega(2) = raw.gyro_rad[2] - gyro_offsets[2];
+
+					/* Accelerometer measurement */
+					a(0) = raw.accelerometer_m_s2[0]-acc_offsets[0];
+					a(1) = raw.accelerometer_m_s2[1]-acc_offsets[1];
+					a(2) = raw.accelerometer_m_s2[2];
+
+					/* Magnetometer measurement, and use current calib */
+					mu(0) = raw.magnetometer_ga[0];
+					mu(1) = raw.magnetometer_ga[1];
+					mu(2) = raw.magnetometer_ga[2];
+					
 					
 					/* All of this should really be in a function */
 					/* Body fixed frame velocity measurements */
-					vbar(0) = (raw.accelerometer_m_s2[0] + attitude_params.cbar_x_offset)/raw.accelerometer_m_s2[2] /Cbar(0); //0.2569f
-					vbar(1) = (raw.accelerometer_m_s2[1] + attitude_params.cbar_y_offset)/raw.accelerometer_m_s2[2] /Cbar(1); //0.4886
-
+					//vbar(0) = (raw.accelerometer_m_s2[0] - attitude_params.cbar_x_offset*raw.accelerometer_m_s2[2])/raw.accelerometer_m_s2[2] /Cbar(0); //0.2569f
+					//vbar(1) = (raw.accelerometer_m_s2[1] - attitude_params.cbar_y_offset*raw.accelerometer_m_s2[2])/raw.accelerometer_m_s2[2] /Cbar(1); //0.4886
+					vbar(0) = (a(0) - attitude_params.cbar_x_offset)/a(2)/Cbar(0);
+					vbar(1) = (a(1) - attitude_params.cbar_y_offset)/a(2)/Cbar(1);
 					
 					baro_alt = raw.baro_alt_meter - baro_offset;
 					if (baro_prev_time != raw.baro_timestamp_relative + raw.timestamp)
@@ -521,21 +538,6 @@ int av_estimator_thread_main(int argc, char *argv[])
 					} else {
 						orb_advertise(ORB_ID(wind_estimate), &windVelocity);
 					}					
-
-					/* Remove bias from gyro measurement */
-					omega(0) = raw.gyro_rad[0] - gyro_offsets[0];
-					omega(1) = raw.gyro_rad[1] - gyro_offsets[1];
-					omega(2) = raw.gyro_rad[2] - gyro_offsets[2];
-
-					/* Accelerometer measurement */
-					a(0) = raw.accelerometer_m_s2[0]-acc_offsets[0];
-					a(1) = raw.accelerometer_m_s2[1]-acc_offsets[1];
-					a(2) = raw.accelerometer_m_s2[2];
-
-					/* Magnetometer measurement, and use current calib */
-					mu(0) = raw.magnetometer_ga[0];
-					mu(1) = raw.magnetometer_ga[1];
-					mu(2) = raw.magnetometer_ga[2];
 
 					/* Poll RC */
 					vehicle_rc_poll();

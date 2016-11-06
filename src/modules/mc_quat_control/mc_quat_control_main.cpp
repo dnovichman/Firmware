@@ -923,7 +923,7 @@ MulticopterQuaternionControl::task_main()
 	fds[0].fd = _v_att_sub;
 	fds[0].events = POLLIN;
 
-	int fdt, ret, servo_count;
+	/*int fdt, ret, servo_count;
 	int pwm_value = 1150;
 
 	fdt = open(PX4IO_DEVICE_PATH, O_WRONLY);
@@ -933,7 +933,7 @@ MulticopterQuaternionControl::task_main()
 	if (ioctl(fdt, PWM_SERVO_GET_COUNT, (unsigned long)&servo_count)) {
 		err(1, "failed to get servo count"); // This is only for testing as servo_count = 8
 	}
-	servo_position_t servos[servo_count];
+	servo_position_t servos[servo_count];*/
 
 	while (!_task_should_exit) {
 
@@ -968,7 +968,7 @@ MulticopterQuaternionControl::task_main()
 				dt = 0.02f;
 			}
 
-			/* Testing servo control */
+			/* Testing servo control 
 			
 			//ret = write(fdt, servos, sizeof(servos));
 			if (_v_rc.channels[5] < 0)
@@ -982,7 +982,7 @@ MulticopterQuaternionControl::task_main()
 
 			if (ret != (int)sizeof(servos)) {
 				//printf("error writing PWM servo data, wrote %u got %d\n", sizeof(servos), ret);
-			}
+			}*/
 			/* End testing */
 
 			/* copy attitude topic */
