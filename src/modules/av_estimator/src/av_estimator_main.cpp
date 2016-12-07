@@ -489,7 +489,7 @@ int av_estimator_thread_main(int argc, char *argv[])
 					{
 						use_barometer(attitude_params, raw.baro_timestamp_relative + raw.timestamp, baro_alt, filter_b.att.R, a, baro_data); //FIXME: do we need to consider bias?
 					}
-					
+					/*
 					if (vbar(0) > 2.0f) //FIXME this is a hack changed later
 						vbar(0) = 2.0f;
 					if (vbar(0) < -2.0f)
@@ -498,7 +498,7 @@ int av_estimator_thread_main(int argc, char *argv[])
 					if (vbar(1) > 2.0f) 
 						vbar(1) = 2.0f;
 					if (vbar(1) < -2.0f)
-						vbar(1) = -2.0f;
+						vbar(1) = -2.0f;*/
 
 					/* Need to capture NaNs and infs */
 					if ((isfinite(vbar(0)) == false) || !(isnan(vbar(0)) == false))

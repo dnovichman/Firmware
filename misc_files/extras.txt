@@ -18,6 +18,6 @@ mc_quat_pos_control start
 # Logging
 sdlog2 stop
 usleep 10000
-sdlog2 start r 20 -a
+sdlog2 start -r 20 -a
 
 #irlock start

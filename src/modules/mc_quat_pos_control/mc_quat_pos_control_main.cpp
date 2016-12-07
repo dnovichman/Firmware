@@ -1099,7 +1099,7 @@ MulticopterQuatPositionControl::gps_vel_setup(void) //home_position_s &home, px4
 	
 	vel_i(0) = _veh_gps_pos.vel_n_m_s;
 	vel_i(1) = _veh_gps_pos.vel_e_m_s;
-	vel_i(2) = -_veh_gps_pos.vel_d_m_s;
+	vel_i(2) = _veh_gps_pos.vel_d_m_s; 
 
 	ivx = vel_i(0);
 	ivy = vel_i(1);
