@@ -505,12 +505,12 @@ MulticopterQuaternionVelControl::MulticopterQuaternionVelControl() :
 	_params_handles.yaw_rate_d		= 	param_find("MC_QUAT_YAWR_D");
 	_params_handles.yaw_rate_i		= 	param_find("MC_QUAT_YAWR_I");
 	_params_handles.yawr_imax		= 	param_find("MC_QUAT_YR_IMAX");
-	_params_handles.man_roll_max	= 	param_find("MC_MAN_R_MAX");
-	_params_handles.man_pitch_max	= 	param_find("MC_MAN_P_MAX");
+	_params_handles.man_roll_max		= 	param_find("MC_MAN_R_MAX");
+	_params_handles.man_pitch_max		= 	param_find("MC_MAN_P_MAX");
 	_params_handles.man_yaw_max		= 	param_find("MC_MAN_Y_MAX");
-	_params_handles.acro_roll_max	= 	param_find("MC_ACRO_R_MAX");
-	_params_handles.acro_pitch_max	= 	param_find("MC_ACRO_P_MAX");
-	_params_handles.acro_yaw_max	= 	param_find("MC_ACRO_Y_MAX");
+	_params_handles.acro_roll_max		= 	param_find("MC_ACRO_R_MAX");
+	_params_handles.acro_pitch_max		= 	param_find("MC_ACRO_P_MAX");
+	_params_handles.acro_yaw_max		= 	param_find("MC_ACRO_Y_MAX");
 	_params_handles.vx_p			= 	param_find("MC_VEL_VX_P");
 	_params_handles.vx_i			= 	param_find("MC_VEL_VX_I");
 	_params_handles.vy_p			= 	param_find("MC_VEL_VY_P");
@@ -526,7 +526,7 @@ MulticopterQuaternionVelControl::MulticopterQuaternionVelControl() :
 	_params_handles.vz_mg			= 	param_find("MC_VEL_VZ_MG");
 	_params_handles.thr_max			= 	param_find("MC_THR_MAX");
 	_params_handles.thr_min			= 	param_find("MC_THR_MIN");
-	_params_handles.battery_switch	= 	param_find("MC_QUAT_BAT_V");
+	_params_handles.battery_switch		= 	param_find("MC_QUAT_BAT_V");
 
 	/* fetch initial parameter values */
 	parameters_update();
@@ -744,8 +744,10 @@ void MulticopterQuaternionVelControl::control_velocity(math::Vector<3> vel)
 	//rollspeed is omega1 or omega-1
 
 	/* These are more like x_con, y_con, z_con */
-	_v_att_sp.roll_body 	= vy_err*Kp_vely + int_vy*Ki_vely - roll_cor/acc_grav - _params.cbar(1)*_vel_setpoint(0);
-	_v_att_sp.pitch_body 	= -vx_err*Kp_velx - int_vx*Ki_velx + pitch_cor/acc_grav + _params.cbar(0)*_vel_setpoint(1);
+	//_v_att_sp.roll_body 	= vy_err*Kp_vely + int_vy*Ki_vely - roll_cor/acc_grav - _params.cbar(1)*_vel_setpoint(0);
+	//_v_att_sp.pitch_body 	= -vx_err*Kp_velx - int_vx*Ki_velx + pitch_cor/acc_grav + _params.cbar(0)*_vel_setpoint(1);
+	_v_att_sp.roll_body 	= vy_err*Kp_vely + int_vy*Ki_vely - roll_cor/acc_grav - _params.cbar(1)*_vel_setpoint(1);
+	_v_att_sp.pitch_body 	= -vx_err*Kp_velx - int_vx*Ki_velx + pitch_cor/acc_grav + _params.cbar(0)*_vel_setpoint(0);
 
 	/* Capture NaN and INF */
 	if ((isfinite(_v_att_sp.roll_body) == false) || !(isnan(_v_att_sp.roll_body) == false))
@@ -1167,6 +1169,9 @@ MulticopterQuaternionVelControl::poll_subscriptions()
 
 	/* Poll body frame meas and est velocity */
 	vehicle_velocity_measured_body_poll();
+
+	/* Poll battery voltage status */
+	battery_status_poll();
 }
 
 void
@@ -1712,6 +1717,7 @@ MulticopterQuaternionVelControl::task_main()
 	_v_vel_body_est_sub	  	= orb_subscribe(ORB_ID(vehicle_velocity_meas_est_body));
 	_v_veh_vicon_pos_sub  	= orb_subscribe(ORB_ID(vehicle_vicon_position));
 	_v_rc_sub 				= orb_subscribe(ORB_ID(rc_channels));
+	_battery_sub = orb_subscribe(ORB_ID(battery_status));
 
 	/* initialize parameters cache */
 	parameters_update();

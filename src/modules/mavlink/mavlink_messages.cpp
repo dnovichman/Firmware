@@ -91,6 +91,10 @@
 #include <uORB/topics/wind_estimate.h>
 #include <uORB/uORB.h>
 
+#include <uORB/topics/vehicle_velocity_est_inertial.h>
+#include <uORB/topics/vehicle_velocity_meas_est_body.h>
+
+
 
 static uint16_t cm_uint16_from_m_float(float m);
 static void get_mavlink_mode_state(struct vehicle_status_s *status, uint8_t *mavlink_state,
@@ -1438,6 +1442,12 @@ private:
     MavlinkOrbSubscription *_pos_sub;
     uint64_t _pos_time;
 
+    MavlinkOrbSubscription *_vel_inertial_sub;
+    uint64_t _vel_inertial_time;
+
+    MavlinkOrbSubscription *_vel_body_sub;
+    uint64_t _vel_body_time;
+
     /* do not allow top copying this class */
     MavlinkStreamVisionPositionNED(MavlinkStreamVisionPositionNED &);
     MavlinkStreamVisionPositionNED& operator = (const MavlinkStreamVisionPositionNED &);
@@ -1445,7 +1455,11 @@ private:
 protected:
     explicit MavlinkStreamVisionPositionNED(Mavlink *mavlink) : MavlinkStream(mavlink),
         _pos_sub(_mavlink->add_orb_subscription(ORB_ID(vision_position_estimate))),
-        _pos_time(0)
+        _pos_time(0),
+	_vel_inertial_sub(_mavlink->add_orb_subscription(ORB_ID(vehicle_velocity_est_inertial))),
+	_vel_inertial_time(0),
+	_vel_body_sub(_mavlink->add_orb_subscription(ORB_ID(vehicle_velocity_meas_est_body))),
+	_vel_body_time(0)
     {}
 
     void send(const hrt_abstime t)
@@ -1467,7 +1481,29 @@ protected:
 
             mavlink_msg_vision_position_estimate_send_struct(_mavlink->get_channel(), &vmsg);
         }
-    }
+	// Let me hack this to send my velocities as vision pos msgs
+	struct vehicle_velocity_meas_est_body_s vel_body;
+	struct vehicle_velocity_est_inertial_s vel_inertial;
+	if (_vel_inertial_sub->update(&_vel_inertial_time, &vel_inertial) && vel_inertial.inertial_valid) {
+			mavlink_vision_position_estimate_t msg;
+
+			msg.usec = vel_inertial.timestamp / 1000;			
+			msg.x = vel_inertial.inertial_bvx;
+			msg.y = vel_inertial.inertial_bvy;
+			msg.z = vel_inertial.inertial_bvz;
+
+			mavlink_msg_vision_position_estimate_send_struct(_mavlink->get_channel(), &msg);
+		} else if (_vel_body_sub->update(&_vel_body_time, &vel_body)) {
+			mavlink_vision_position_estimate_t msg;
+
+			msg.usec = vel_body.timestamp / 1000;
+			msg.x = vel_body.est_vx;
+			msg.y = vel_body.est_vy;
+			msg.z = vel_body.est_vz;
+
+			mavlink_msg_vision_position_estimate_send_struct(_mavlink->get_channel(), &msg);
+		}
+	}
 };
 
 class MavlinkStreamLocalPositionNED : public MavlinkStream
