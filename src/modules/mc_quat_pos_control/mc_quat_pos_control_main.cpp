@@ -1689,13 +1689,13 @@ MulticopterQuatPositionControl::task_main()
 					_att_sp.thrust = thrust;
 					//printf("auto mode\n");
 					
-					/* Use Autonomous mode */			
+					/* Use Autonomous mode 			
 					if (_att_sp_pub != nullptr) {
 						orb_publish(ORB_ID(vehicle_attitude_setpoint), _att_sp_pub, &_att_sp);
 
 					} else {
 						_att_sp_pub = orb_advertise(ORB_ID(vehicle_attitude_setpoint), &_att_sp);
-					}
+					}*/
 				}				
 			}
 			//usleep(5000);	

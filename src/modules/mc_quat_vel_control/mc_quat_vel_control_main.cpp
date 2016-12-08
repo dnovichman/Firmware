@@ -93,6 +93,7 @@
 #include <uORB/topics/vehicle_vicon_position.h>
 
 #include "mc_quat_vel_control_params.h"
+#include <uORB/topics/battery_status.h>
 
 #include <uORB/topics/rc_channels.h>
 
@@ -151,6 +152,7 @@ private:
 	int 		_v_veh_vicon_pos_sub;	/**< Subscribe to vehicle vicon pos */
 
 	int 		_v_rc_sub; //add description
+	int 	_battery_sub;
 
 	orb_advert_t	_att_sp_pub;			/**< attitude setpoint publication */
 	orb_advert_t	_v_rates_sp_pub;		/**< rate setpoint publication */
@@ -177,6 +179,7 @@ private:
 	struct vehicle_vicon_position_s 		_v_vicon_position;	/**< Subscribe to vicon for landing in auto mode */
 
 	struct rc_channels_s					_v_rc_channels;
+	struct battery_status_s _battery;
 
 	perf_counter_t	_loop_perf;				/**< loop performance counter */
 
@@ -241,6 +244,7 @@ private:
 
 		param_t man_vx_max;
 		param_t man_vy_max;
+		param_t battery_switch;
 	}		_params_handles;				/**< handles for interesting parameters */
 
 	struct {
@@ -264,6 +268,7 @@ private:
 		float man_yaw_max;
 		float yawr_imax;
 		math::Vector<3> acro_rate_max;		/**< max attitude rates in acro mode */
+		int battery_switch;
 	}		_params;
 
 	/**
@@ -280,6 +285,11 @@ private:
 	 * Check for changes in vehicle control mode.
 	 */
 	void		vehicle_control_mode_poll();
+
+	/**
+	  * Obtain battery status for esc
+	*/
+	void 		battery_status_poll();
 
 	/**
 	 * Check for changes in RC.
@@ -434,6 +444,7 @@ MulticopterQuaternionVelControl::MulticopterQuaternionVelControl() :
 	_v_vel_est_sub(-1),
 	_v_vel_body_est_sub(-1),
 	_v_veh_vicon_pos_sub(-1),
+	_battery_sub(-1),
 
 /* publications */
 	_att_sp_pub(nullptr),
@@ -515,6 +526,7 @@ MulticopterQuaternionVelControl::MulticopterQuaternionVelControl() :
 	_params_handles.vz_mg			= 	param_find("MC_VEL_VZ_MG");
 	_params_handles.thr_max			= 	param_find("MC_THR_MAX");
 	_params_handles.thr_min			= 	param_find("MC_THR_MIN");
+	_params_handles.battery_switch	= 	param_find("MC_QUAT_BAT_V");
 
 	/* fetch initial parameter values */
 	parameters_update();
@@ -957,9 +969,24 @@ int MulticopterQuaternionVelControl::parameters_update()
 	param_get(_params_handles.yawr_imax, &v);
 	_params.yawr_imax = v;
 
+	param_get(_params_handles.battery_switch, &_params.battery_switch);
+
 	_actuators_0_circuit_breaker_enabled = circuit_breaker_enabled("CBRK_RATE_CTRL", CBRK_RATE_CTRL_KEY);
 
 	return OK;
+}
+
+void
+MulticopterQuaternionVelControl::battery_status_poll()
+{
+	bool updated;
+
+	/* Check for battery status update */
+	orb_check(_battery_sub, &updated);
+
+	if (updated) {
+		orb_copy(ORB_ID(battery_status), _battery_sub, &_battery);
+	}
 }
 
 void
@@ -1611,6 +1638,11 @@ MulticopterQuaternionVelControl::control_attitude_rates(float dt)
 	_att_control(0) = -_params.rate_p(0)*rates_err(0) - _params.rate_d(0)*(vehicles_Omega_rates(0) - vehicles_Omega_rates_d(0));
 	_att_control(1) = -_params.rate_p(1)*rates_err(1) - _params.rate_d(1)*(vehicles_Omega_rates(1) - vehicles_Omega_rates_d(1));
 	_att_control(2) = -_params.rate_p(2)*rates_err(2) - _params.rate_d(2)*(vehicles_Omega_rates(2) - vehicles_Omega_rates_d(2));
+
+	/* Here we implement the battery voltage if we are using open-loop voltage control 16.4*/
+	if (_params.battery_switch == 1) {
+		_thrust_sp = _thrust_sp * (1 + (16.4f - _battery.voltage_filtered_v)/16.4f);
+	}
 
 	if (_v_control_mode.flag_control_manual_enabled && _v_rc_channels.channels[4] < 0.0f) 
 	{
