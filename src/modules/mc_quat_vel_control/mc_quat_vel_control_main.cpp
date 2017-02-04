@@ -232,6 +232,7 @@ private:
 		param_t yaw_rate_p;
 		param_t yaw_rate_d;
 		param_t yaw_rate_i;
+		param_t battery_v0;
 
 		param_t yawr_imax;
 
@@ -269,6 +270,7 @@ private:
 		float yawr_imax;
 		math::Vector<3> acro_rate_max;		/**< max attitude rates in acro mode */
 		int battery_switch;
+		float battery_v0;
 	}		_params;
 
 	/**
@@ -527,6 +529,7 @@ MulticopterQuaternionVelControl::MulticopterQuaternionVelControl() :
 	_params_handles.thr_max			= 	param_find("MC_THR_MAX");
 	_params_handles.thr_min			= 	param_find("MC_THR_MIN");
 	_params_handles.battery_switch		= 	param_find("MC_QUAT_BAT_V");
+	_params_handles.battery_v0		= 	param_find("MC_QUAT_BAT_VOL");
 
 	/* fetch initial parameter values */
 	parameters_update();
@@ -972,6 +975,7 @@ int MulticopterQuaternionVelControl::parameters_update()
 	_params.yawr_imax = v;
 
 	param_get(_params_handles.battery_switch, &_params.battery_switch);
+	param_get(_params_handles.battery_v0, &_params.battery_v0);
 
 	_actuators_0_circuit_breaker_enabled = circuit_breaker_enabled("CBRK_RATE_CTRL", CBRK_RATE_CTRL_KEY);
 
@@ -1646,7 +1650,7 @@ MulticopterQuaternionVelControl::control_attitude_rates(float dt)
 
 	/* Here we implement the battery voltage if we are using open-loop voltage control 16.4*/
 	if (_params.battery_switch == 1) {
-		_thrust_sp = _thrust_sp * (1 + (16.4f - _battery.voltage_filtered_v)/16.4f);
+		_thrust_sp = _thrust_sp * (1 + (_params.battery_v0 - _battery.voltage_filtered_v)/_params.battery_v0);
 	}
 
 	if (_v_control_mode.flag_control_manual_enabled && _v_rc_channels.channels[4] < 0.0f) 
