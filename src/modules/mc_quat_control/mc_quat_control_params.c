@@ -112,6 +112,7 @@ PARAM_DEFINE_FLOAT(MC_QUAT_YR_IMAX, 30.0f);
  * @group Quadrotor Quaternion Control
  */
 PARAM_DEFINE_INT32(MC_QUAT_BAT_V, 0);
+PARAM_DEFINE_FLOAT(MC_BAT_VOL, 12.2f);
 
 /**
  * Max manual roll

@@ -2299,6 +2299,9 @@ int sdlog2_thread_main(int argc, char *argv[])
 				log_msg.body.log_WIND.y = buf.wind_estimate.windspeed_east;
 				log_msg.body.log_WIND.cov_x = buf.wind_estimate.covariance_north;
 				log_msg.body.log_WIND.cov_y = buf.wind_estimate.covariance_east;
+				log_msg.body.log_WIND.vx = buf.wind_estimate.velocities[0];
+				log_msg.body.log_WIND.vy = buf.wind_estimate.velocities[1];
+				log_msg.body.log_WIND.vz = buf.wind_estimate.velocities[2];
 				LOGBUFFER_WRITE_AND_COUNT(WIND);
 			}
 

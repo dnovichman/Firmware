@@ -127,6 +127,9 @@ void av_estimator_b::update(Vector3f &a, Vector3f &w, Vector3f &vbar, Vector3f &
 	scaling_u = u;
 
 	beta_a_filterb = beta_a_prev;
+	#if 0
+	printf("beta a is %3.3f %3.3f %3.3f\n",double(beta_a_filterb(0)), double(beta_a_filterb(1)), double(beta_a_filterb(2)));
+	#endif
 }
 
 void av_estimator_b::publish(float timestamp, Vector3f vhat_a, Vector3f what_vel, bool valid)

@@ -155,6 +155,9 @@ set(config_module_list
 	#
 	modules/bottle_drop
 
+	# Moses
+	modules/mc_quat_control
+
 	#
 	# Rover apps
 	#

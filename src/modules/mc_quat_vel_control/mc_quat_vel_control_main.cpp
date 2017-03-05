@@ -529,7 +529,7 @@ MulticopterQuaternionVelControl::MulticopterQuaternionVelControl() :
 	_params_handles.thr_max			= 	param_find("MC_THR_MAX");
 	_params_handles.thr_min			= 	param_find("MC_THR_MIN");
 	_params_handles.battery_switch		= 	param_find("MC_QUAT_BAT_V");
-	_params_handles.battery_v0		= 	param_find("MC_QUAT_BAT_VOL");
+	_params_handles.battery_v0		= 	param_find("MC_BAT_VOL");
 
 	/* fetch initial parameter values */
 	parameters_update();
@@ -1545,7 +1545,7 @@ void MulticopterQuaternionVelControl::control_attitude(float dt)
 		_v_att_sp.q_d[1] = q_d[1];
 		_v_att_sp.q_d[2] = q_d[2];
 		_v_att_sp.q_d[3] = q_d[3];
-		_thrust_sp = _manual_control_sp.z; //uncomment
+		//_thrust_sp = _manual_control_sp.z; //uncomment
 		_v_att_sp.thrust = _thrust_sp;
 		publish_att_sp = true;					
 	}

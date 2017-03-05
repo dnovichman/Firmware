@@ -142,6 +142,8 @@ void 	vehicle_rc_poll()
 
 	if (updated) {
 		orb_copy(ORB_ID(rc_channels), _v_rc_sub, &_v_rc_channels);
+		// This should be implemented in hardware
+		_v_rc_channels.channels[5] = -_v_rc_channels.channels[5];
 	}
 }
 
@@ -483,22 +485,23 @@ int av_estimator_thread_main(int argc, char *argv[])
 					//vbar(1) = (raw.accelerometer_m_s2[1] - attitude_params.cbar_y_offset*raw.accelerometer_m_s2[2])/raw.accelerometer_m_s2[2] /Cbar(1); //0.4886
 					vbar(0) = (a(0) - attitude_params.cbar_x_offset)/a(2)/Cbar(0);
 					vbar(1) = (a(1) - attitude_params.cbar_y_offset)/a(2)/Cbar(1);
+
+Vector3f vbar_d;
+vbar_d(0) = (a(0) - attitude_params.cbar_x_offset - filter_b.beta_a_filterb(0))/(a(2)-filter_b.beta_a_filterb(2))/Cbar(0);
+vbar_d(1) = (a(1) - attitude_params.cbar_y_offset - filter_b.beta_a_filterb(1))/(a(2)-filter_b.beta_a_filterb(2))/Cbar(1);
+
+vbar(0) = vbar_d(0);
+vbar(1) = vbar_d(1);
 					
 					baro_alt = raw.baro_alt_meter - baro_offset;
 					if (baro_prev_time != raw.baro_timestamp_relative + raw.timestamp)
 					{
-						use_barometer(attitude_params, raw.baro_timestamp_relative + raw.timestamp, baro_alt, filter_b.att.R, a, baro_data); //FIXME: do we need to consider bias?
+						use_barometer(attitude_params, raw.baro_timestamp_relative + raw.timestamp, baro_alt, filter_b.att.R, a, baro_data); 
 					}
-					/*
-					if (vbar(0) > 2.0f) //FIXME this is a hack changed later
-						vbar(0) = 2.0f;
-					if (vbar(0) < -2.0f)
-						vbar(0) = -2.0f;
 
-					if (vbar(1) > 2.0f) 
-						vbar(1) = 2.0f;
-					if (vbar(1) < -2.0f)
-						vbar(1) = -2.0f;*/
+//printf("vbar0 %3.3f %3.3f\n",double(vbar(0)), double(vbar_d(0)));
+//printf("vbar1 %3.3f %3.3f\n",double(vbar(1)), double(vbar_d(1)));
+
 
 					/* Need to capture NaNs and infs */
 					if ((isfinite(vbar(0)) == false) || !(isnan(vbar(0)) == false))
@@ -531,7 +534,9 @@ int av_estimator_thread_main(int argc, char *argv[])
 						orb_advertise(ORB_ID(vehicle_velocity_meas_est_body), &meas_body_vel);
 					}
 					
-
+					windVelocity.velocities[0] = filter_a.what(0);
+					windVelocity.velocities[1] = filter_a.what(1);
+					windVelocity.velocities[2] = filter_a.what(2);
 					/* Publish wind velocities*/
 					if (wind_vel_pub != nullptr) {
 						orb_publish(ORB_ID(wind_estimate), wind_vel_pub, &windVelocity);
@@ -552,11 +557,13 @@ int av_estimator_thread_main(int argc, char *argv[])
 
 							param_set(param_find("ATT_CBAR_XOFF"), &xoff);
 							param_set(param_find("ATT_CBAR_YOFF"), &yoff);
+
+							printf("Calibration done %3.3f %3.3f\n",double(xoff), double(yoff));							
 						}
 
 						if (_v_rc_channels.channels[5] > 0)
 						{
-							velocity_offset_calibration(filter_a.vhat, a);
+							velocity_offset_calibration(filter_a.vhat, a - filter_b.beta_a_filterb);
 						} else {
 							xvelcalib = 0.0f;
 							yvelcalib = 0.0f;
@@ -707,7 +714,7 @@ void use_barometer(av_estimator_params  attitude_params, uint64_t cur_baro_time,
 void 	velocity_offset_calibration(Vector3f veh_vel, Vector3f acc)
 {	
 
-	xvelcalib += (veh_vel(0)*Cbar(0)*acc(2) - acc(0));
-	yvelcalib += (veh_vel(1)*Cbar(1)*acc(2) - acc(1));
+	xvelcalib += (acc(0) - veh_vel(0)*Cbar(0)*acc(2));
+	yvelcalib += (acc(1) - veh_vel(1)*Cbar(1)*acc(2));
 	vel_calib_count += 1;
 }
