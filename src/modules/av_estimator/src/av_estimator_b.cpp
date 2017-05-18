@@ -39,6 +39,11 @@ void av_estimator_b::update(Vector3f &a, Vector3f &w, Vector3f &vbar, Vector3f &
 	k1vicon = attitude_params.att_vel_k1vicon;
 	k1vc = attitude_params.att_vel_k2;
 
+	Matrix3f k1_vec = Matrix3f::Identity();
+		k1_vec(0,0) = k1;	
+		k1_vec(1,1) = k1;
+		k1_vec(2,2) = 0.3f*k1;
+
 	/* Calculate v error only once*/
 	verror = vhat - vbar;
 
@@ -91,14 +96,17 @@ void av_estimator_b::update(Vector3f &a, Vector3f &w, Vector3f &vbar, Vector3f &
 	Vector3f vhat_dot_vc;
 
 	if (filter_a_valid) {
-		vhat_dot_vc	= k1vc * (vhat_prev - Rhat_prev.transpose() * (vhat_in - what_in));
+		vhat_dot_vc	= -k1vc * (vhat_prev - Rhat_prev.transpose() * (vhat_in - what_in));
 		//printf("filrer a valid\n");
 	}
 
-	else
-		vhat_dot_vc	= Vector3f::Zero();
+	else { //This is not really necessary
+		//vhat_dot_vc	= Vector3f::Zero();
+		k1vc = k1;
+		vhat_dot_vc	= -k1_vec * (vhat_prev - Rhat_prev.transpose() * vhat_in );
+	}
 
-	vhat_dot = -skew(omega-beta_w) * vhat_prev + a - beta_a - k1 * verror + g * X.transpose() * e3 + vhat_dot_vc;
+	vhat_dot = -skew(omega-beta_w) * vhat_prev + a - beta_a - k1_vec * verror + g * X.transpose() * e3 + vhat_dot_vc;
 
 	//if(filterII_available)
 	//{
@@ -109,7 +117,7 @@ void av_estimator_b::update(Vector3f &a, Vector3f &w, Vector3f &vbar, Vector3f &
 	vhat = vhat_dot * dt + vhat_prev;
 
 	/* Offsets */
-	beta_a_dot = k1 * k7 * verror; 
+	beta_a_dot = k1_vec * k7 * verror; 
 	beta_a = beta_a_dot * dt + beta_a_prev;
 	beta_w_dot = k3 * k8 * (g/u * Rhat_prev * verror).cross(e3);
 	beta_w = beta_w_dot * dt + beta_w_prev;
@@ -227,8 +235,8 @@ void av_estimator_b::publish(float timestamp, Vector3f vhat_a, Vector3f what_vel
 	strapdown_est_vhat(2) =  vhat(2);
 
 
-	/* Publish */
-	if (vel.inertial_valid)
+	/* Publish */ //This is scary
+	//if (vel.inertial_valid)
 	{
 		if (vel_pub != nullptr) {
 			orb_publish(ORB_ID(vehicle_velocity_est_inertial), vel_pub, &vel);

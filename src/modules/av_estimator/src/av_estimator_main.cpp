@@ -481,26 +481,24 @@ int av_estimator_thread_main(int argc, char *argv[])
 					
 					/* All of this should really be in a function */
 					/* Body fixed frame velocity measurements */
-					//vbar(0) = (raw.accelerometer_m_s2[0] - attitude_params.cbar_x_offset*raw.accelerometer_m_s2[2])/raw.accelerometer_m_s2[2] /Cbar(0); //0.2569f
-					//vbar(1) = (raw.accelerometer_m_s2[1] - attitude_params.cbar_y_offset*raw.accelerometer_m_s2[2])/raw.accelerometer_m_s2[2] /Cbar(1); //0.4886
-					vbar(0) = (a(0) - attitude_params.cbar_x_offset)/a(2)/Cbar(0);
-					vbar(1) = (a(1) - attitude_params.cbar_y_offset)/a(2)/Cbar(1);
+					//vbar(0) = (a(0) - attitude_params.cbar_x_offset)/a(2)/Cbar(0);
+					//vbar(1) = (a(1) - attitude_params.cbar_y_offset)/a(2)/Cbar(1);
 
-Vector3f vbar_d;
-vbar_d(0) = (a(0) - attitude_params.cbar_x_offset - filter_b.beta_a_filterb(0))/(a(2)-filter_b.beta_a_filterb(2))/Cbar(0);
-vbar_d(1) = (a(1) - attitude_params.cbar_y_offset - filter_b.beta_a_filterb(1))/(a(2)-filter_b.beta_a_filterb(2))/Cbar(1);
 
-vbar(0) = vbar_d(0);
-vbar(1) = vbar_d(1);
+					vbar(0) = (a(0) - attitude_params.cbar_x_offset - filter_b.beta_a_filterb(0))/(a(2)-filter_b.beta_a_filterb(2))/Cbar(0);
+					vbar(1) = (a(1) - attitude_params.cbar_y_offset - filter_b.beta_a_filterb(1))/(a(2)-filter_b.beta_a_filterb(2))/Cbar(1);
+
 					
 					baro_alt = raw.baro_alt_meter - baro_offset;
 					if (baro_prev_time != raw.baro_timestamp_relative + raw.timestamp)
 					{
-						use_barometer(attitude_params, raw.baro_timestamp_relative + raw.timestamp, baro_alt, filter_b.att.R, a, baro_data); 
+						//use_barometer(attitude_params, raw.baro_timestamp_relative + raw.timestamp, baro_alt, filter_b.att.R, a, baro_data); 
+						use_barometer(attitude_params, raw.baro_timestamp_relative + raw.timestamp, baro_alt, filter_b.Rhat, a, baro_data);
 					}
-
-//printf("vbar0 %3.3f %3.3f\n",double(vbar(0)), double(vbar_d(0)));
-//printf("vbar1 %3.3f %3.3f\n",double(vbar(1)), double(vbar_d(1)));
+					#if 0
+						printf("vbar0 %3.3f %3.3f\n",double(vbar(0)), double(vbar_d(0)));
+						printf("vbar1 %3.3f %3.3f\n",double(vbar(1)), double(vbar_d(1)));
+					#endif
 
 
 					/* Need to capture NaNs and infs */
@@ -510,8 +508,9 @@ vbar(1) = vbar_d(1);
 					if ((isfinite(vbar(1)) == false) || !(isnan(vbar(1)) == false))
 						vbar(1) = 0.0f;	
 
-					vbar(2) = (baro_data(0) - (vbar(0)*filter_b.att.R[6] + vbar(1)*filter_b.att.R[7]))/(filter_b.att.R[8]);
-
+					//vbar(2) = (baro_data(0) - (vbar(0)*filter_b.att.R[6] + vbar(1)*filter_b.att.R[7]))/(filter_b.att.R[8]);
+					// New computation
+					vbar(2) = determine_vz_rotated(filter_b.Rhat, vbar, baro_data(0));
 					if ((isfinite(vbar(2)) == false) || !(isnan(vbar(2)) == false))
 						vbar(2) = 0.0f;	
 
@@ -669,7 +668,8 @@ void getCurrentCalibParam(av_estimator_params  attitude_params, float * current_
 	}
 }
 
-void use_barometer(av_estimator_params  attitude_params, uint64_t cur_baro_time, float baro_alt, float * cur_att, Vector3f &acc, Vector2f &baro_out)
+//void use_barometer(av_estimator_params  attitude_params, uint64_t cur_baro_time, float baro_alt, float * cur_att, Vector3f &acc, Vector2f &baro_out)
+void use_barometer(av_estimator_params  attitude_params, uint64_t cur_baro_time, float baro_alt, Matrix3f cur_att, Vector3f &acc, Vector2f &baro_out)
 {
 	Vector3f e3 = {0.0, 0.0f, 1.0f};
 	Matrix3f Rot;
@@ -685,7 +685,7 @@ void use_barometer(av_estimator_params  attitude_params, uint64_t cur_baro_time,
 
 	baro_prev_time = cur_baro_time;
 
-	Rot(0,0) = cur_att[0]; 
+	/*Rot(0,0) = cur_att[0]; 
 	Rot(0,1) = cur_att[1]; 
 	Rot(0,2) = cur_att[2];     
 
@@ -695,7 +695,35 @@ void use_barometer(av_estimator_params  attitude_params, uint64_t cur_baro_time,
 
 	Rot(2,0) = cur_att[6]; 
 	Rot(2,1) = cur_att[7]; 
-	Rot(2,2) = cur_att[8];
+	Rot(2,2) = cur_att[8];*/
+
+	/* New hack */
+	float roll, pitch, yaw;
+	roll 	= atan2f(cur_att(2,1), cur_att(2,2));	
+	pitch 	= -asinf(cur_att(2,0));	
+	yaw 	= atan2f(cur_att(1,0), cur_att(0,0));	
+	float ctheta, stheta, cphi, sphi, cpsi, spsi;
+	ctheta = cos(-pitch);
+	stheta = sin(-pitch);
+	cphi = cos(-roll);
+	sphi = sin(-roll);
+	cpsi = cos(yaw);
+	spsi = sin(yaw);
+	Matrix3f Rhot;
+	Rhot(0,0) = ctheta * cpsi; 
+	Rhot(0,1) = sphi * stheta * cpsi - cphi * spsi; 
+	Rhot(0,2) = cphi * stheta * cpsi+sphi * spsi;     
+
+	Rhot(1,0) = ctheta * spsi; 
+	Rhot(1,1) = sphi * stheta * spsi+cphi * cpsi; 
+	Rhot(1,2) = cphi * stheta * spsi - sphi * cpsi;		    
+
+	Rhot(2,0) = -stheta; 
+	Rhot(2,1) = ctheta * sphi; 
+	Rhot(2,2) = ctheta * cphi; 
+
+	/* End New Hack */
+	Rot = Rhot; //cur_att;
 
 	Vector3f dd = Rot * acc;
 
@@ -717,4 +745,13 @@ void 	velocity_offset_calibration(Vector3f veh_vel, Vector3f acc)
 	xvelcalib += (acc(0) - veh_vel(0)*Cbar(0)*acc(2));
 	yvelcalib += (acc(1) - veh_vel(1)*Cbar(1)*acc(2));
 	vel_calib_count += 1;
+}
+
+float determine_vz_rotated(Matrix3f R, Vector3f Vbar, float vz_input)
+{
+	Matrix3f Rtrans = R.transpose(); 
+	float vx = (Vbar(0) - vz_input*Rtrans(0,2) - (Vbar(1) - vz_input*Rtrans(1,2))*Rtrans(0,1)/Rtrans(1,1))/(Rtrans(0,0) - Rtrans(1,0)/Rtrans(1,1));
+	float vy = (Vbar(1) - vz_input*Rtrans(1,2) - vx*Rtrans(1,0))/Rtrans(1,1);
+	float vz = Rtrans(2,0)*vx + Rtrans(2,1)*vy + Rtrans(2,2)*vz_input;
+	return vz;
 }

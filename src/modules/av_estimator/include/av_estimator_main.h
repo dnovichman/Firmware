@@ -45,10 +45,13 @@ void getCurrentCalibParam(struct av_estimator_params  attitude_params, float * c
 void applyCurrentCompensation(Vector3f &mu, float * current, float * current_k, float * current_c, uint64_t &armed_start_time, av_estimator_params  attitude_params, vehicle_status_s vehicle_status_raw);
 
 /* Function to use barometer to determine vz */
-void use_barometer(av_estimator_params  attitude_params, uint64_t cur_baro_time, float baro_alt, float * cur_att, Vector3f &acc, Vector2f &baro_out);
+//void use_barometer(av_estimator_params  attitude_params, uint64_t cur_baro_time, float baro_alt, float * cur_att, Vector3f &acc, Vector2f &baro_out);
+void use_barometer(av_estimator_params  attitude_params, uint64_t cur_baro_time, float baro_alt, Matrix3f cur_att, Vector3f &acc, Vector2f &baro_out);
 
 /* Function to do drag offset calibration */
 void velocity_offset_calibration(Vector3f veh_vel, Vector3f acc);
 
 /* Check for changes in RC */
 void		vehicle_rc_poll();
+
+float determine_vz_rotated(Matrix3f R, Vector3f Vbar, float vz_input);

@@ -58,6 +58,7 @@ void av_estimator_a::update(Vector3f &a, Vector3f &w, Matrix3f &Rhat_b, vehicle_
 	//printf("vaht %3.3f %3.3f %3.3f\n",double(vhat(0)), double(vhat(1)),double(vhat(2)));
 
 	Rhot = Rhat_b;
+	//orthonormalize(Rhot);
 
 	/* End Moses Hack */
 
@@ -91,13 +92,19 @@ void av_estimator_a::update(Vector3f &a, Vector3f &w, Matrix3f &Rhat_b, vehicle_
 	else
 	{
 		valid = false;
+		k2w = 0.0;
+		what_prev = Vector3f::Zero();
+		what 	  = Vector3f::Zero();
+		verror = Vector3f::Zero();
+		k2vc = k2v;
+		k2v = 0.0;
 	}
 
 	/* Calculate intgration update */
-	vhat_dot 	= Rhot * (a - beta_a) + g * e3;// - k2vc * ((vhat_a_prev-what_a_prev)-Rhat*vhat_prev);					
+	vhat_dot 	= Rhot * (a - beta_a) + g * e3;
 	Rhat_dot 	= Rhat * skew(w);
 	what_dot 	= - k2w * ((what_prev - vhat_prev) + Rhot * vhat_body); 
-	//beta_a_dot 	= k2ba * k2v * verror;// - k2bac*(beta_a_2_prev-beta_a_prev); //comment Jan16
+
 	Matrix3f beta_gains = Matrix3f::Zero();
 	Matrix3f beta_gains_coup = Matrix3f::Zero();
 	beta_gains(0,0) = k2ba * k2v;
@@ -113,13 +120,14 @@ void av_estimator_a::update(Vector3f &a, Vector3f &w, Matrix3f &Rhat_b, vehicle_
 	/* if there is no measurement of v, we want to keep the same vhat */
 	if (!valid)
 	{
-		vhat_dot = Vector3f::Zero();
+		//vhat_dot = Vector3f::Zero(); this
 
-		what_dot =  Vector3f::Zero();
-		what_prev = Vector3f::Zero();
+		what_dot  =  Vector3f::Zero();
+		what_prev =  Vector3f::Zero();
+		what 	  =  Vector3f::Zero();
 	
-		dt2 = 0.0f;
-
+		dt2 = 0.0f; 
+		/* This
 		if (vbar_a.norm() < 5.0f)
 		{
 			vhat_prev(0) = vbar_a(0);
@@ -129,6 +137,8 @@ void av_estimator_a::update(Vector3f &a, Vector3f &w, Matrix3f &Rhat_b, vehicle_
 		{
 			vhat_prev = Vector3f::Zero();
 		}
+		*/
+
 	}
 	
 	vhat_dot_2 = - k2v * (vhat - vbar_a) -k2vc * ((vhat - what) - Rhot * vhat_body); //Rhat_b was here
@@ -147,8 +157,12 @@ void av_estimator_a::update(Vector3f &a, Vector3f &w, Matrix3f &Rhat_b, vehicle_
 	/* Set previous values */
 	Rhat_prev 		= Rhat;
 	vhat_prev 		= vhat;
-	beta_a_prev 	= beta_a;
+	beta_a_prev 		= beta_a;
 	what_prev 		= what;
+	//printf("vhat is %3.3f %3.3f %3.3f\n",double(vhat(0)), double(vhat(1)), double(vhat(2)));
+	//printf("what is %3.3f %3.3f %3.3f\n",double(what(0)), double(what(1)), double(what(2)));
+	//Vector3f vtest = Rhot * vhat_body;
+	//printf("vbod is %3.3f %3.3f %3.3f\n",double(vtest(0)), double(vtest(1)), double(vtest(2)));
 }
 
 
