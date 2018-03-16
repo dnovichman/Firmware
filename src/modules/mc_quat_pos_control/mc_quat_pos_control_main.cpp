@@ -777,6 +777,8 @@ MulticopterQuatPositionControl::vehicle_gps_position_poll()
 
 	if (updated) {
 		orb_copy(ORB_ID(vehicle_gps_position), _veh_gps_pos_sub, &_veh_gps_pos);
+	
+		_veh_gps_pos.timestamp_time_relative = hrt_absolute_time();
 		//printf("sat %u %d %d\n",_veh_gps_pos.timestamp_time,_veh_gps_pos.fix_type, _veh_gps_pos.satellites_used);
 		handle_gps_signal();
 
@@ -923,7 +925,7 @@ MulticopterQuatPositionControl::handle_gps_signal()
 				_veh_home.alt = (double)_veh_home.alt*0.001;
 			}	
 	//printf("home %3.3f %3.3f %3.3f %3.3f\n",double(_veh_home.lat), double(_veh_home.lon), double(_veh_home.alt), double(M_DEG_TO_RAD));
-			vel_pub = _veh_gps_pos.vel_ned_valid;			
+			vel_pub = _veh_gps_pos.vel_ned_valid;
 			
 			
 			float dtttss = (_veh_gps_pos.timestamp_time_relative -gps_old_time )*0.000001f;
@@ -945,6 +947,7 @@ MulticopterQuatPositionControl::handle_gps_signal()
 				vel_updated = true;
 			}	else {
 				_veh_vel.inertial_valid 	= false;
+				_veh_vel.body_valid             = true;
 			}	
 
 		} 
@@ -1133,6 +1136,7 @@ MulticopterQuatPositionControl::gps_vel_setup(void) //home_position_s &home, px4
 	px_tmp = x_gps(0);
 	py_tmp = x_gps(1);
 	pz_tmp = x_gps(2);
+	old_meas_time 	= get_time_micros();
 }
 
 /**

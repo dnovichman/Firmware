@@ -406,8 +406,7 @@ int av_estimator_thread_main(int argc, char *argv[])
 				/* Without this line here, you don't get the exact 40Hz vicon velocity estimate. 
 					Need to rewrite in a similar manner to vel_con */
 					
-				orb_copy(ORB_ID(vehicle_velocity_meas_inertial), velocity_measured_fd, &rawMeasuredVelocity);
-				 				
+				orb_copy(ORB_ID(vehicle_velocity_meas_inertial), velocity_measured_fd, &rawMeasuredVelocity); 				
 				
 				if (!initialized) {
 					gyro_offsets[0] += raw.gyro_rad[0];
